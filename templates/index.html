@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html>
+  <head>
+{% include 'partials/header.html' %}
+
+</head>
+<body>
+{% include 'partials/navigation.html' %}
+  <!-- Page Content -->
+  <div class="container-fluid">
+    <h3 style="text-align: center;">DIALITE: Discover, Align and Integrate Open Data Tables</h3>
+    <hr>
+      <div id="notification"></div>
+      <div id="initial_container">
+        <div class="row">
+        <div class="col-md-2 col-sm-2 col-lg-2"></div>
+        <div class="col-md-8 col-sm-8 col-lg-8">
+        <!-- <p style="color: red; text-align:center;">Our permanent website is: <a href="http://icde.khoury.northeastern.edu/dialite">http://icde.khoury.northeastern.edu/dialite</a>. The previous address: <a href="#">http://icde.khoury.northeastern.edu:9000</a> may not work as expected.</p> -->
+        <p style="text-align: justify;"> Abstract: We demonstrate a novel table discovery pipeline called DIALITE that allows users to discover, integrate and analyze open data tables. DIALITE has three main stages. First, it allows users to discover tables from open data platforms using state-of-the-art table discovery techniques. Second, DIALITE integrates the discovered tables to produce an integrated table. Finally, it allows users to analyze the integration result by applying different downstreaming tasks over it. Our pipeline has a flexible architecture such that the user can easily add and compare additional discovery and integration algorithms.</p>
+        <p>Related Paper: Aamod Khatiwada, Roee Shraga, and Renée J. Miller. DIALITE: Discover, Align and Integrate Open Data Tables. In SIGMOD-Companion 2023, ACM.
+          <!-- <a target="_blank" href="https://doi.org/10.1145/3555041.3589732">https://doi.org/10.1145/3555041.3589732</a> -->
+           <a target="_blank" href="https://dl.acm.org/doi/abs/10.1145/3555041.3589732">Paper</a> &nbsp; <a target="_blank" href="https://github.com/northeastern-datalab/dialite">Github</a>
+        </p>
+      </div>
+        <div class="col-md-2 col-sm-2 col-lg-2"></div>
+        </div>
+      </div>
+      <div class="row">
+      <div class="col-md-2 col-sm-2 col-lg-2"></div>
+      <div class="col-md-8 col-sm-8 col-lg-8">
+        <div id="upload_query_div" class="display_options">
+          <h3 style="text-align:center;">Add Query Table</h3><br>
+            <form enctype="multipart/form-data">
+              <!-- <div class="row form-group">
+                <div class="col-md-4">
+                  <label>Name query table</label>
+                </div>
+                <div class="col-md-8">
+                <input type="text" name="upload_query_name" class="form-control" id="upload_query_name" placeholder="Enter table name without extension." required>
+                </div>
+              </div> -->
+              <div class="row form-group">
+                <div class="col-md-4">
+                  <label>Select Table</label>
+                </div>
+                <div class="col-md-8">
+                  <input type="file" name="query_table" id="query_table" accept=".csv" required>
+                </div>
+                </div>
+                <button class="btn btn-success form-control" name = "upload_query" id="upload_query">Upload Table</button>
+            </form>
+            <div id="uploading_table" style="display: none;">
+              <p style="text-align: center; color: blue;">Uploading Table. Please wait!!!</p>
+            </div>
+        </div>
+        <div id="generate_query_div" class="display_options">
+          <h3 style="text-align:center;">Generate Query table</h3>
+          <form>
+            <div class="row form-group">
+                <!-- <div class="col-md-4">
+                  <label>Name query table</label>
+                </div> -->
+                <!-- <div class="col-md-8"> -->
+                <label>Name query table:</label>
+                <input type="text" name="generated_query_name" class="form-control" id="generated_query_name" placeholder="Enter table name without extension." required>
+                <!-- </div> -->
+            </div>
+            <div class="row form-group">
+              <label>Enter a prompt to generate Query table. An example prompt is provided.</label>
+              <textarea rows="3" id="query_prompt" name="query_prompt" class="form-control" style="resize:null" required>Generate a table about soccer players with 5 rows and 5 columns.</textarea>
+            </div>
+            <div class="row form-group">
+              <label>Enter your OPEN AI API KEY. You can generate one from <a href="https://platform.openai.com/" target="_blank">Open AI website</a>. Note that we do not store it or use it for any other purposes. Still for your safety, you can always deactivate your key after use.</label>
+              <input type="text" name="api_key" class="form-control" id="api_key" placeholder="XX-************************************************" required>
+            </div>
+            <div class="row form-group">
+              <button id="submit_prompt" class="btn btn-success form-control">Generate Query Table</button>
+            </div>
+          </form>
+          <div id="generating_table" style="display: none;">
+            <p style="text-align: center; color: blue;">Generating Table. Please wait!!!</p>
+          </div>
+          <div id="generated_table" style="width: 100%; overflow-x: auto; overflow-y: scroll;"></div>
+        </div>
+        <div id="discover_table_div" class="display_options">
+          <h3 style="text-align:center;">Discover Tables</h3>
+          <form id="discover_tables_form">
+            <div class="row form-group">
+              <div class="col-md-4">
+                <label for="dropdown">Select Query Table:</label>
+              </div>
+              <div class="col-md-8">
+                <select id="discover_query" class = "form-control" name="discover_query" required>
+                  <option disabled selected>--Select Query Table--</option>
+                  {% for table in query_tables %}
+                    <option value="{{table}}">{{table}}</option>
+                  {% endfor %}
+                  <!-- <option value="covid19">covid19.csv</option>
+                  <option value="mayors">mayors.csv</option>
+                  <option value="players">players.csv</option> -->
+                </select>
+              </div>
+            </div>
+            <div class="row form-group">
+              <div class="col-md-4">
+                <label for="discovery_method">Select Discovery Methods:</label>
+              </div>
+              <div class="col-md-8">
+                <input type="checkbox" id="santos" name="discovery_method" value="SANTOS" checked> SANTOS (Union Search)&nbsp
+                <input type="checkbox" id="lsh" name="discovery_method" value="LSH"> LSH Ensemble (Join Search)
+              </div>
+            </div>
+            <div class="row form-group">
+              <div class="col-md-4">
+                <label for="intent_column">Select search column index:</label>
+              </div>
+              <div class="col-md-8">
+                <select id="intent_column" class = "form-control" name="intent_column" required>
+                  <option disabled selected>--First Select Query Table--</option>
+                </select>
+                <!-- <input type="number" class = "form-control" id="intent_column" name="intent_column" min="0" step="1" value="0" required> -->
+              </div>
+            </div>
+            <div class="row form-group" id="top_k_div">
+              <div class="col-md-4">
+                <label for="k">Select k:</label>
+              </div>
+              <div class="col-md-8">
+                <input type="number" class = "form-control" id="number" name="k" min="1" step="1" value="1" required>
+              </div>
+            </div>
+            <div class="row form-group" id="threshold_div">
+              <div class="col-md-4">
+                <label for="threshold">Select threshold:</label>
+              </div>
+              <div class="col-md-8">
+                <input type="number" class = "form-control" id="number" name="threshold" min="0.05" step="0.01" value="0.9" required>
+              </div>
+            </div>
+            <input type="submit" class="btn btn-success form-control" value="Search Tables">
+          </form>
+          <div id="searching_table" style="display: none;">
+            <p style="text-align: center; color: blue;">Searching Tables. This may take longer!!!</p>
+          </div>
+          <div id="searched_tables" style="width: 100%; overflow-x: auto;"></div>
+          <div id="current_query_table" style="width: 100%; overflow-x: auto; overflow-y: scroll;"></div>
+        </div>
+        <div id="integrate_table_div" class="display_options">
+            <h3 style="text-align:center;">Integrate Tables</h3>
+            <form id = "integrate_tables_form" enctype="multipart/form-data">
+              <div class="row form-group">
+                <div class="col-md-4">
+                  <label>Select Integration set:</label>
+                </div>
+                <div class="col-md-8">
+                  <select id="select_integration_sets" required class = "form-control" name="select_integration_sets">
+                    <option disabled selected>--Select Query Table--</option>
+                    {% for set in integration_sets %}
+                      <option value="{{set}}">{{set}}</option>
+                    {% endfor %}
+                    <!-- <option value="option1">covid19</option>
+                    <option value="option2">mayors</option>
+                    <option value="option3">players</option> -->
+                  </select>
+                </div>
+              </div>
+              <div class="row form-group">
+                <div class="col-md-4">
+                  <label for="select">Select Methods:</label>
+                </div>
+                <div class="col-md-8">
+                  <input type="radio" required checked id="alite" name="integration_method" value="ALITE"> ALITE&nbsp
+                  <input type="radio" required id="outer_join" name="integration_method" value="OUTER"> Outer Join
+                </div>
+              </div>
+              <div class="row form-group" id="check_table_div" style="display: none;">
+                <div class="col-md-4">
+                  <label for="select">Check tables to exclude:</label>
+                </div>
+                <div class="col-md-8" id="exclude_table_options">
+                  <!-- <input type="checkbox" id="dummy1" name="exclude_list" value="dummy1"> <a href="#">Table1</a>&nbsp
+                  <input type="checkbox" id="dummy2" name="exclude_list" value="dummy2"> <a href="#">Table2</a> -->
+                </div>
+              </div>
+              <input type="submit" class ="form-control btn-success" value="Integrate Tables">
+            </form>
+            <div id="integrating_table" style="display: none;">
+              <p style="text-align: center; color: blue;">Integrating Tables. This may take longer!!!</p>
+            </div>
+            <div id="integrated_table_div" style="width: 100%; overflow-x: auto; overflow-y: scroll;"></div>
+        </div>
+        <div id="analyze_table_div" class="display_options">
+          <h3 style="text-align:center;">Analyze Tables</h3>
+          <form id = "analyze_table_form" enctype="multipart/form-data">
+            <div class="row form-group">
+              <div class="col-md-4">
+                <label>Select Integrated table 1:</label>
+              </div>
+              <div class="col-md-8">
+                <select id="select_integrated_table1" required class = "form-control" name="select_integrated_table1">
+                  <option disabled selected>--Select First Integrated Table--</option>
+                  {% for tab in integrated_tables %}
+                    <option value="{{tab}}">{{tab}}</option>
+                  {% endfor %}
+                  <!-- <option value="option1">covid19</option>
+                  <option value="option2">mayors</option>
+                  <option value="option3">players</option> -->
+                </select>
+              </div>
+            </div>
+            <div class="row form-group">
+              <div class="col-md-4">
+                <label>Select Integrated table 2:</label>
+              </div>
+              <div class="col-md-8">
+                <select id="select_integrated_table2" required class = "form-control" name="select_integrated_table2">
+                  <option disabled selected>--Select Second Integrated Table--</option>
+                  {% for tab in integrated_tables %}
+                    <option value="{{tab}}">{{tab}}</option>
+                  {% endfor %}
+                  <!-- <option value="option1">covid19</option>
+                  <option value="option2">mayors</option>
+                  <option value="option3">players</option> -->
+                </select>
+              </div>
+            </div>
+            <!-- <input type="submit" class ="form-control btn-success" value="Analyze Tables"> -->
+          </form>
+          <div id="analyzing_table" style="display: none;">
+            <p style="text-align: center; color: blue;">Generating analysis results. This may take longer!!!</p>
+          </div>
+          <div id="current_table1_div" class="row" style="width: 100%; overflow-x: auto; overflow-y: scroll;"></div><br>
+          <!-- <div class="row"> -->
+          <div id="correlation1" class="row" style="width: 100%; overflow-x:auto;"></div>
+          <!-- <div id="stats1" class="col-md-6 col-lg-6 col-sm-6" style="width: 100%; overflow-x: auto;"></div> -->
+          <!-- </div> -->
+          <br>
+          <div id="current_table2_div" class="row" style="width: 100%; overflow-x: auto; overflow-y: scroll;"></div><br>
+          <!-- <div class="row"> -->
+          <div id="correlation2" class="row" style="width: 100%; overflow-x: auto;"></div>
+            <!-- <div id="stats2" class="col-md-6 col-lg-6 col-sm-6" style="width: 100%; overflow-x: auto; "></div> -->
+          <!-- </div>           -->
+      </div>
+      <hr>
+      {% include 'partials/footer.html' %}
+    
+      <script>
+        $(document).ready(function() {
+          $('#upload_query').click(function(e) {
+            e.preventDefault();
+            var file_data = $('#query_table').prop('files')[0];
+            if (!file_data) {
+                alert('Please select a file to upload');
+                return;
+            }
+            var show_uploading_table = document.getElementById("uploading_table");
+            show_uploading_table.style.display = "block";
+            var form_data = new FormData();
+            form_data.append('query_table', file_data);
+            $.ajax({
+                url: '/upload_query',
+                type: 'POST',
+                data: form_data,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                  if (response.success) {
+                    var hide_uploading_table_success = document.getElementById("uploading_table");
+                    hide_uploading_table_success.style.display = "none";
+                    $('#notification').html('<p style="color:green; text-align:center;">' + response.message + '</p>');
+                  } else {
+                      var hide_uploading_table_fail = document.getElementById("uploading_table");
+                      hide_uploading_table_fail.style.display = "none";
+                      $('#notification').html('<p style="color:red; text-align:center;">' + response.message + '</p>');
+                  }
+                  $('#query_table').val('')
+              },
+              error: function(xhr, status, error) {
+                  $('#notification').html('<p style="color:red; text-align:center;">' + xhr.responseText + '</p>');
+                  $('#query_table').val('');
+                  var hide_uploading_table_error = document.getElementById("uploading_table");
+                  hide_uploading_table_error.style.display = "none";
+                }
+            });
+            });
+
+          $('#submit_prompt').click(function(e){
+            e.preventDefault();
+            var query_prompt = $('#query_prompt').val();
+            var generated_query_name = $("#generated_query_name").val();
+            var api_key = $("#api_key").val(); 
+            if (!query_prompt || !generated_query_name) {
+                alert('Please enter table name and a prompt to generate query table');
+                return;
+            }
+            document.getElementById("generated_table").innerHTML = "";
+            var show_generating_table = document.getElementById("generating_table");
+            show_generating_table.style.display = "block";
+            var form_data = new FormData();
+            form_data.append('generated_query_name', generated_query_name);
+            form_data.append('query_prompt', query_prompt);
+            form_data.append('api_key', api_key);
+            $.ajax({
+              url: '/generate_query',
+              type: 'POST',
+              data: form_data,
+              contentType: false,
+              processData: false,
+              success: function(response) {
+                if (response.success) {
+                    $('#notification').html('<p style="color:green; text-align:center;">' + response.message + '</p>');
+                    $('#generated_table').html(response.table);
+                    $('#generated_table').css("maxHeight", "400px");
+                    var hide_generating_table_success = document.getElementById("generating_table");
+                    hide_generating_table_success.style.display = "none";
+                } else {
+                    $('#notification').html('<p style="color:red; text-align:center;">' + response.message + '</p>');
+                    var hide_generating_table_fail = document.getElementById("generating_table");
+                    hide_generating_table_fail.style.display = "none";
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#notification').html('<p style="color:red; text-align:center;">' + xhr.responseText + '</p>');
+                var hide_generating_table_error = document.getElementById("generating_table");
+                hide_generating_table_error.style.display = "none";
+              }
+            });
+            
+          });
+          $("#threshold_div").hide();
+           // Attach a click event handler to each checkbox
+          $("#santos").click(function() {
+            if ($(this).is(":checked")) {
+              $("#top_k_div").show();
+            } else {
+              $("#top_k_div").hide();
+            }
+          });
+
+          $("#lsh").click(function() {
+            if ($(this).is(":checked")) {
+              $("#threshold_div").show();
+            } else {
+              $("#threshold_div").hide();
+            }
+          });
+
+          $('#intent_column').on('change', function() {
+            let selectOption = document.getElementById("intent_column");
+            let selectedColumn = selectOption.options[selectOption.selectedIndex].text;
+            //console.log(selectedColumn);
+            $('th, td').removeClass('highlight');
+            $('th:contains(' + selectedColumn + '), td:nth-child(' + ($('th:contains(' + selectedColumn + ')').index() + 1) + ')').addClass('highlight');
+            //$('th:contains(' + selectedColumn + ')').addClass('highlight');
+          });
+          $('#discover_query').on('change', function() {
+            // Get selected table name
+            let discover_query = document.getElementById("discover_query").value;
+            var form_data = new FormData();
+            form_data.append('query_table_name', discover_query);
+            // Send Ajax request to Flask route to load table data
+            $.ajax({
+              url: '/show_query_table',
+              type: 'POST',
+              contentType: false,
+              processData:false,
+              data: form_data,
+              success: function(response) {
+                // Generate HTML table from DataFrame and replace current table in HTML
+                //console.log(response.table);
+                $('#current_query_table').html('<br><h3 style="text-align:center; color:blue;">Selected Query Table:</h3><br>'+ response.table);
+                $('#current_query_table').css("maxHeight", "400px");
+                var options = "<option disabled selected>--Select Column--</option> "
+                $.each(response.options, function(key, value) {
+                  options += "<option value = '" + value.value + "'>" + value.text + "</option>";
+                });
+                $("#intent_column").html(options);
+              }
+            });
+          });
+
+          $('#select_integrated_table1').on('change', function() {
+            // Get selected table name
+            let integrated_table = document.getElementById("select_integrated_table1").value;
+            let another_table = document.getElementById("select_integrated_table2").value;
+            if (another_table == "--Select Second Integrated Table--"){
+              another_table = "none";
+            }
+              console.log("another_table: " + another_table);
+            var form_data = new FormData();
+            form_data.append('integrated_table', integrated_table);
+            form_data.append('integrated_table_id', '1');
+            form_data.append('another_table', another_table);
+            // Send Ajax request to Flask route to load table data
+            $.ajax({
+              url: '/show_integrated_table',
+              type: 'POST',
+              contentType: false,
+              processData:false,
+              data: form_data,
+              success: function(response) {
+                // Generate HTML table from DataFrame and replace current table in HTML
+                //console.log(response);
+                $('#current_table1_div').html('<br><p style="text-align:center; color:blue;">Integrated Table 1: '+ integrated_table +'</p><br>'+ response.table);
+                $('#current_table1_div').css("maxHeight", "250px");
+                $("#correlation1").html('<p style="text-align:center; color:blue;"><b>Statistics:</b></p>&nbsp');
+                $("#correlation1").append("<p><b>Null values: </b>"+ response.nan_count + "</p>&nbsp");
+                $("#correlation1").append("<p><b>Total rows: </b>"+ response.num_rows + "</p>&nbsp");
+                $("#correlation1").append("<p><b>Total columns: </b>"+ response.num_cols + "</p>&nbsp");
+                if (response.tdr != "na"){
+                  $("#correlation1").append("<p><b>TDR: </b>"+ response.tdr + "</p>&nbsp");
+                }
+                /*
+                else
+                {
+                  $("#correlation1").append("<p><b>TDR: </b> Another table not selected.</p>&nbsp<br>");
+                }
+                */
+                $('#correlation1').append('<br>' + response.correlations);
+                /*
+                $("#stats1").html('<p style="text-align:center; color:blue;"><b>Statistics:</b></p><br>');
+                $("#stats1").append("<span><b>Null values:</b>"+ response.nan_count + "</span><br>");
+                $("#stats1").append("<span><b>Total rows:</b>"+ response.num_rows + "</span><br>");
+                $("#stats1").append("<span><b>Total columns:</b>"+ response.num_cols + "</span><br>");
+                if (response.tdr != "na"){
+                  $("#stats1").append("<span><b>TDR:</b>"+ response.tdr + "</span>");
+                }
+                else
+                {
+                  $("#stats1").append("<span>Another table not selected.</span>");
+                }
+                */
+              }
+            });
+          });
+          
+          $('#select_integrated_table2').on('change', function() {
+            // Get selected table name
+            let integrated_table = document.getElementById("select_integrated_table2").value;
+            let another_table = document.getElementById("select_integrated_table1").value;
+            var form_data = new FormData();
+            form_data.append('integrated_table', integrated_table);
+            form_data.append('another_table', another_table);
+            form_data.append('integrated_table_id', '2');
+            // Send Ajax request to Flask route to load table data
+            $.ajax({
+              url: '/show_integrated_table',
+              type: 'POST',
+              contentType: false,
+              processData:false,
+              data: form_data,
+              success: function(response) {
+                // Generate HTML table from DataFrame and replace current table in HTML
+                //console.log(response.table);
+                $('#current_table2_div').html('<br><p style="text-align:center; color:blue;">Integrated Table 2: '+ integrated_table +'</p><br>'+ response.table);
+                $('#current_table2_div').css("maxHeight", "250px");
+                $("#correlation2").html('<p style="text-align:center; color:blue;"><b>Statistics: </b></p>&nbsp');
+                $("#correlation2").append("<p><b>Null values: </b>"+ response.nan_count + "</p>&nbsp");
+                $("#correlation2").append("<p><b>Total rows: </b>"+ response.num_rows + "</p>&nbsp");
+                $("#correlation2").append("<p><b>Total columns: </b>"+ response.num_cols + "</p>&nbsp");
+                if (response.tdr != "na"){
+                  $("#correlation2").append("<p><b>TDR: </b>"+ response.tdr + "</p>&nbsp<br>");
+                }
+                /*
+                else
+                {
+                  $("#correlation2").append("<p><b>TDR: </b> Another table not selected.</p>&nbsp<br>");
+                }
+                */
+                $('#correlation2').append('<br>' + response.correlations);
+                /*
+                $("#stats2").html('<p style="text-align:center; color:blue;"><b>Statistics:</b></p><br>');
+                $("#stats2").append("<span><b>Null values:</b>"+ response.nan_count + "</span><br>");
+                $("#stats2").append("<span><b>Total rows:</b>"+ response.num_rows + "</span><br>");
+                $("#stats2").append("<span><b>Total columns:</b>"+ response.num_cols + "</span><br>");
+                if (response.tdr != "na"){
+                  $("#stats2").append("<span><b>TDR:</b>"+ response.tdr + "</span>");
+                }
+                else
+                {
+                  $("#stats2").append("<span>Another table not selected.</span>");
+                }
+                */
+              }
+            });
+          });
+
+          $('#discover_tables_form').submit(function(e){
+            //console.log($('#discover_query').val());
+            e.preventDefault();
+            // validate query table input
+            if ($('#discover_query').val() == null) {
+              alert('Please select a Query Table.');
+              return;
+            }
+            // validate discovery method input
+            if (!$('input[name="discovery_method"]:checked').length) {
+              alert('Please select at least one discovery method.');
+              return;
+            }
+            console.log($("#santos").is(":checked"));
+            console.log($("#lsh").is(":checked"));
+            
+            // validate k input
+            if (($("#santos").is(":checked") == "true") && ($('#k').val() <= 0)) {
+              alert('K must be a positive integers greater than 0.');
+              return;
+            }
+
+            // validate k input
+            if (($("#lsh").is(":checked") == "true") && ($('#threshold').val() <= 0 || $('#threshold').val() > 1)) {
+              alert('Threshold must be greater than 0 and less than 1.');
+              return;
+            }
+            
+            
+            // validate query table input
+            if ($('#intent_column').val() == null) {
+              alert('Please select a Search Column.');
+              return;
+            }
+
+            // validate intent column input
+            // if ($('#intent_column').val() < 0) {
+            //  alert('Intent column index must be 0 or a positive integer.');
+            //  return;
+            // }            
+            
+            document.getElementById("searched_tables").innerHTML = "";
+            var show_searching_table = document.getElementById("searching_table");
+            show_searching_table.style.display = "block";
+            $.ajax({
+              url: '/discover_tables',
+              type: 'POST',
+              data: $('#discover_tables_form').serialize(),
+              success: function(response) {
+                //console.log(response);
+                if (response.success) {
+                    $('#notification').html('<p style="color:green; text-align:center;">' + response.message + '</p>');
+                    let topk_list = document.getElementById("current_query_table");
+                    $('#current_query_table').html('<br><h3 style="text-align:center; color:blue;">Search Results:</h3><br>');
+                    response.integration_list.forEach(function(item){
+                      var li = document.createElement("li");
+                      var link = document.createElement("a");
+                      link.href = "/download?file=data/dialite_datalake/" + item;
+                      //link.download = "data/dialite_datalake/" + item;
+                      //link.download = item;
+                      link.target = "_blank"
+                      link.textContent = item;
+                      li.appendChild(link);
+                      topk_list.appendChild(li);
+                    });
+                    
+                    var hide_searching_table_success = document.getElementById("searching_table");
+                    hide_searching_table_success.style.display = "none";
+                } else {
+                    $('#notification').html('<p style="color:red; text-align:center;">' + response.message + '</p>');
+                    var hide_searching_table_fail = document.getElementById("searching_table");
+                    hide_searching_table_fail.style.display = "none";
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#notification').html('<p style="color:red; text-align:center;">' + xhr.responseText + '</p>');
+                var hide_searching_table_error = document.getElementById("searching_table");
+                hide_searching_table_error.style.display = "none";
+              }
+            });
+            
+          });
+        });
+        
+
+        $('#select_integration_sets').on('change', function() {
+          // Get selected table name
+          let current_set = document.getElementById("select_integration_sets").value;
+          var form_data = new FormData();
+          form_data.append('integration_set_name', current_set);
+          // Send Ajax request to Flask route to load table data
+          $.ajax({
+            url: '/show_integration_set',
+            type: 'POST',
+            contentType: false,
+            processData:false,
+            data: form_data,
+            success: function(response) {
+              // Generate HTML table from DataFrame and replace current table in HTML
+              // console.log(response);
+              // $('#current_query_table').html('<br><h3 style="text-align:center; color:blue;">Selected Query Table:</h3><br>'+ response.table);
+              // $('#current_query_table').css("maxHeight", "300px");
+              var checkboxes = ""
+              response.table_list.forEach(function(item){
+                checkboxes += "<input type = 'checkbox' id = '" + item + "' name = 'exclude_list' value = '" + item;
+                checkboxes += "'> <a href='/download?file=" + response.integration_set_link+"/"+item+"' target = '_blank'>"+ item +"</a>&nbsp";
+              });
+              $("#exclude_table_options").html(checkboxes);
+              var show_check_table_div = document.getElementById("check_table_div");
+              show_check_table_div.style.display = "";
+            }
+          });
+        });
+
+        $('#integrate_tables_form').submit(function(e){
+          //console.log($('#discover_query').val());
+          e.preventDefault();
+          // validate query table input
+          if ($('#select_integration_sets').val() == null) {
+            alert('Please select an Integration set.');
+            return;
+          }
+          // validate discovery method input
+          if (!$('input[name="integration_method"]:checked').length) {
+            alert('Please select at least one discovery method.');
+            return;
+          }
+
+          document.getElementById("integrated_table_div").innerHTML = "";
+          var show_integrating_table = document.getElementById("integrating_table");
+          show_integrating_table.style.display = "block";
+          $.ajax({
+            url: '/integrate_tables',
+            type: 'POST',
+            data: $('#integrate_tables_form').serialize(),
+            success: function(response) {
+              //console.log(response);
+              if (response.success) {
+                  $('#notification').html('<p style="color:green; text-align:center;">' + response.message + '</p>');
+                  let integrated_table = document.getElementById("integrated_table_div");
+                  $('#integrated_table_div').html('<br><h3 style="text-align:center; color:blue;">Integrated Table:</h3><br>');
+                  // Generate the download button and add it to the table container
+                  var downloadButton = '<a href="/download?file='+response.link+'" class="btn btn-danger">Download Table</a>';
+                  $('#integrated_table_div').append(downloadButton);
+                  $('#integrated_table_div').append(response.table);
+                  $('#integrated_table_div').css("maxHeight", "400px");
+      
+                  var hide_integrating_table_success = document.getElementById("integrating_table");
+                  hide_integrating_table_success.style.display = "none";
+              } else {
+                  $('#notification').html('<p style="color:red; text-align:center;">' + response.message + '</p>');
+                  var hide_integrating_table_fail = document.getElementById("integrating_table");
+                  hide_integrating_table_fail.style.display = "none";
+              }
+          },
+          error: function(xhr, status, error) {
+              $('#notification').html('<p style="color:red; text-align:center;">' + xhr.responseText + '</p>');
+              var hide_integrating_table_error = document.getElementById("integrating_table");
+              hide_integrating_table_error.style.display = "none";
+            }
+          });
+        });
+      </script>
+  </body>
+</html>
